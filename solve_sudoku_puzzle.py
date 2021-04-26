@@ -1,11 +1,13 @@
+# USAGE
+# python solve_sudoku_puzzle.py --model output/number_classifier.h5 --image sudoku_puzzle.jpg
 import argparse
-
 import cv2
 import imutils
 import numpy as np
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
 from src.sudoku.puzzle import find_puzzle, extract_digit
+from sudoku import Sudoku
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -25,7 +27,7 @@ if __name__ == "__main__":
     image = imutils.resize(image, width=600)  # Resize maintaining proportion
 
     # Find puzzle on image
-    puzzle, warped = find_puzzle(image, args.debug)
+    puzzle_image, warped = find_puzzle(image, args.debug)
 
     # initialize 9x9 board
     board = np.zeros((9, 9), dtype="int")
@@ -39,11 +41,11 @@ if __name__ == "__main__":
     cells_location = []
 
     # Generate cells location
-    for y in range(9):
+    for y in range(0, 9):
         row = []
         # x - col
         # y - row
-        for x in range(9):
+        for x in range(0, 9):
             # Compute start-end x-y location of current cell
             start_X = x * step_X
             start_Y = y * step_Y
@@ -73,5 +75,30 @@ if __name__ == "__main__":
         # Add row to cells location
         cells_location.append(row)
 
+    # construct a Sudoku puzzle from the board
+    print("[INFO] OCR'd Sudoku board:")
+    puzzle = Sudoku(3, 3, board=board.tolist())
+    puzzle.show()
 
-    print(f"Board: {board}")
+    # solve the Sudoku puzzle
+    print("[INFO] solving Sudoku puzzle...")
+    solution = puzzle.solve()
+    solution.show_full()
+
+    # Print solution on image
+    for cell_row, board_row in zip(cells_location, solution.board):
+        for cell, digit in zip(cell_row, board_row):
+            start_X, start_Y, end_X, end_Y = cell
+            # Compute digit location
+            text_X = int((end_X - start_X) * 0.33)  # 1/3
+            text_Y = int((end_Y - start_Y) * -0.2)
+            text_X += start_X
+            text_Y += end_Y
+            print(f"Cell: {cell}; {(text_X, text_Y)}")
+
+            # Draw number - use bottom-left corner
+            cv2.putText(puzzle_image, str(digit), (text_X, text_Y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+
+    # show the output image
+    cv2.imshow("Sudoku Result", puzzle_image)
+    cv2.waitKey(0)
