@@ -12,8 +12,8 @@ from sklearn.metrics import classification_report
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import EarlyStopping
 
-EPOCHS = 10
-BATCH_SIZE = 250
+EPOCHS = 30
+BATCH_SIZE = 64
 
 if __name__ == "__main__":
     # define arguments
@@ -23,6 +23,7 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
 
     # Load MNIST dataset
+    # Split Train, Validation data
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
     # Pre-process Data
@@ -38,11 +39,6 @@ if __name__ == "__main__":
     y_train = to_categorical(y_train, num_classes=10)
     y_test = to_categorical(y_test, num_classes=10)
 
-    # Split Train, Validation data
-    X_train, X_val, y_train, y_val = train_test_split(X_train,
-                                                      y_train,
-                                                      test_size=0.1,
-                                                      random_state=1)
 
     # Create model
     model = SudokuModel.build()
@@ -56,10 +52,10 @@ if __name__ == "__main__":
 
     ## Data Augumentation - Create image variations
     datagen = ImageDataGenerator(
-        rotation_range=5,
+        rotation_range=10,
         zoom_range=0.1,
         width_shift_range=0.1,
-        height_shift_range=0.1
+        height_shift_range=0.1,
     )
     datagen.fit(X_train)
 
@@ -68,14 +64,13 @@ if __name__ == "__main__":
         mode="min",
         patience=6,  # how many epochs to wait before stopping
         restore_best_weights=True,
-        verbose=1
     )
 
     # Fit model
     history = model.fit(
         datagen.flow(X_train, y_train, batch_size=BATCH_SIZE),
         epochs=EPOCHS,
-        validation_data=(X_val, y_val),
+        validation_data=(X_test, y_test),
         steps_per_epoch=X_train.shape[0] // BATCH_SIZE,
         callbacks=[early_stopping]
     )
@@ -85,6 +80,7 @@ if __name__ == "__main__":
 
     history_df.loc[:, ['loss', 'val_loss']].plot()
     history_df.loc[:, ['accuracy', 'val_accuracy']].plot()
+    plt.show()
 
     print(("Best Validation Loss: {:0.4f}" + \
            "\nBest Validation Accuracy: {:0.4f}") \

@@ -9,23 +9,28 @@ class SudokuModel:
             layers.InputLayer((width, height, depth)),
 
             # First convolutional block: CONV2D -> Activation -> Maxpooling
-            layers.Conv2D(filters=32, kernel_size=5, activation="relu", padding="same"),
-            layers.MaxPool2D(),
-            layers.Dropout(0.3),
+            layers.Conv2D(filters=32, kernel_size=3, activation="relu", padding="same"),
+            layers.BatchNormalization(),
+            layers.Conv2D(filters=32, kernel_size=3, activation="relu", padding="same"),
+            layers.BatchNormalization(),
+            layers.Conv2D(filters=32, kernel_size=5, strides=2, activation="relu", padding="same"),
+            layers.BatchNormalization(),
+            layers.Dropout(0.4),
 
             # Second convolutional block
-            layers.Conv2D(filters=32, kernel_size=5, activation="relu", padding="same"),
-            layers.MaxPool2D(),
-            layers.Dropout(0.3),
-
-            # Third convolutional block
-            layers.Conv2D(filters=32, kernel_size=5, activation="relu", padding="same"),
-            layers.MaxPool2D(),
+            layers.Conv2D(filters=64, kernel_size=3, activation="relu", padding="same"),
+            layers.BatchNormalization(),
+            layers.Conv2D(filters=64, kernel_size=3, activation="relu", padding="same"),
+            layers.BatchNormalization(),
+            layers.Conv2D(filters=64, kernel_size=5, strides=2, activation="relu", padding="same"),
+            layers.BatchNormalization(),
+            layers.Dropout(0.4),
 
             # Classifier Head -> Dense Layers
             layers.Flatten(),
 
-            layers.Dense(256, activation="relu"),
+            layers.Dense(128, activation="relu"),
+            layers.BatchNormalization(),
             layers.Dropout(0.5),
 
             layers.Dense(classes, activation="softmax")
